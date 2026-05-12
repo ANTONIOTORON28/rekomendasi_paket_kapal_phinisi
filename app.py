@@ -21,30 +21,36 @@ st.set_page_config(
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv(
-        "dataset_kapal_preprocessing.csv"
-    )
+    try:
 
-    df.columns = df.columns.str.strip()
+        df = pd.read_csv(
+            "dataset_kapal_preprocessing.csv"
+        )
 
-    # =====================================================
-    # COMBINE FEATURES
-    # =====================================================
-    df["processed_text"] = (
+        df.columns = df.columns.str.strip()
 
-        df["kategori"].fillna('') + ' ' +
+        # =================================================
+        # COMBINE FEATURES
+        # =================================================
+        df["processed_text"] = (
 
-        df["destinasi"].fillna('') + ' ' +
+            df["kategori"].fillna('') + ' ' +
 
-        df["fasilitas"].fillna('') + ' ' +
+            df["destinasi"].fillna('') + ' ' +
 
-        df["layanan"].fillna('') + ' ' +
+            df["fasilitas"].fillna('')
 
-        df["deskripsi"].fillna('')
+        )
 
-    )
+        return df
 
-    return df
+    except FileNotFoundError:
+
+        st.error(
+            "File dataset_kapal_preprocessing.csv tidak ditemukan."
+        )
+
+        st.stop()
 
 
 # =========================================================
@@ -215,9 +221,8 @@ st.title(
 st.write(
     """
 Temukan paket wisata phinisi terbaik
-berdasarkan kebutuhan perjalanan Anda
-menggunakan metode Sentence-BERT
-dan Content-Based Filtering.
+berdasarkan kategori perjalanan
+dan destinasi wisata.
 """
 )
 
@@ -227,33 +232,33 @@ st.divider()
 # =========================================================
 # INPUT
 # =========================================================
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
 
     selected_paket = st.selectbox(
 
-        "Pilih Jenis Paket",
+        "Jenis Paket",
 
-        [
-
-            "Private Trip",
-
-            "Open Trip",
-
-            "Family Trip",
-
-            "Honeymoon",
-
-            "Diving Trip",
-
-            "Luxury Trip"
-
-        ]
+        sorted(
+            df["kategori"].dropna().unique()
+        )
 
     )
 
 with col2:
+
+    selected_destinasi = st.selectbox(
+
+        "Destinasi",
+
+        sorted(
+            df["destinasi"].dropna().unique()
+        )
+
+    )
+
+with col3:
 
     top_n = st.slider(
 
@@ -268,35 +273,12 @@ with col2:
     )
 
 
-user_desc = st.text_area(
-
-    "Deskripsikan kebutuhan perjalanan Anda",
-
-    placeholder="""
-Contoh:
-private trip dengan jacuzzi,
-sunset dinner, snorkeling,
-dan chef pribadi
-"""
-
-)
-
-
 # =========================================================
-# SEARCH BUTTON
+# BUTTON SEARCH
 # =========================================================
 if st.button(
     "🔍 Cari Rekomendasi"
 ):
-
-    if user_desc.strip() == "":
-
-        st.warning(
-            "Silakan isi kebutuhan perjalanan."
-        )
-
-        st.stop()
-
 
     # =====================================================
     # USER QUERY
@@ -307,7 +289,7 @@ if st.button(
 
         + " " +
 
-        user_desc
+        selected_destinasi
 
     )
 
@@ -343,7 +325,7 @@ if st.button(
 
 
     # =====================================================
-    # RECOMMENDED PACKAGE LIST
+    # RECOMMENDED PACKAGE
     # =====================================================
     recommended_names = []
 
@@ -375,7 +357,7 @@ if st.button(
 
 
     # =====================================================
-    # METRICS
+    # SHOW METRICS
     # =====================================================
     st.subheader(
         "📊 Evaluasi Model"
@@ -461,32 +443,20 @@ if st.button(
                 f"""
 ## #{rank} {item.get('nama_paket','-')}
 
-🚢 **Kapal:**  
+🚢 **Nama Kapal:**  
 {item.get('nama_kapal','-')}
 
-📌 **Kategori:**  
+📌 **Kategori Paket:**  
 {item.get('kategori','-')}
 
 🗺️ **Destinasi:**  
 {item.get('destinasi','-')}
 
-📅 **Durasi:**  
-{item.get('durasi','-')}
-
 💰 **Harga:**  
 {item.get('harga','-')}
 
-🛏️ **Cabin:**  
-{item.get('cabin','-')}
-
 ⭐ **Fasilitas:**  
 {item.get('fasilitas','-')}
-
-🍽️ **Layanan:**  
-{item.get('layanan','-')}
-
-📝 **Deskripsi:**  
-{item.get('deskripsi','-')}
 
 📈 **Similarity Score:**  
 {round(scores[idx], 4)}
