@@ -22,7 +22,7 @@ st.set_page_config(
 def load_data():
 
     df = pd.read_csv(
-        "dataset_paket_wisata.csv"
+        "dataset_kapal_preprocessing.csv"
     )
 
     df.columns = df.columns.str.strip()
